@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revit Naming Convention Tool</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+            --success-color: #10b981;
+             --danger-color: #dc2626; /* Added for override button */
+             --warning-color: #f59e0b; /* Added for decode section */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            margin-top: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .wizard-container, .decoder-container { /* Added decoder-container */
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+         .decoder-container {
+              border: 1px solid var(--warning-color); /* Different border for contrast */
+              background-color: #fffbeb; /* Light yellow background */
+              margin-top: 3rem; /* More space after the wizard */
+         }
+        .decoder-container h2 {
+            color: var(--warning-color);
+        }
+
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        select, input[type="text"], textarea { /* Added textarea */
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        select:focus, input[type="text"]:focus, textarea:focus { /* Added textarea */
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+         select:disabled, input[type="text"]:disabled, textarea:disabled { /* Added textarea */
+            background-color: #e2e8f0;
+            cursor: not-allowed;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 1rem;
+             flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+
+        .buttons > div {
+             flex: 1 1 0%; /* Allow placeholder to take space */
+             min-width: 0; /* Prevent placeholder from dictating minimum width */
+        }
+
+         .buttons button {
+             flex: 0 0 auto; /* Buttons don't grow or shrink automatically */
+             min-width: 120px; /* Ensure buttons have minimum width */
+         }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        button.secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        button.secondary:hover {
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+
+         button#overrideCheckBtn { /* Style for the override button */
+            background-color: var(--danger-color);
+            margin-left: auto; /* Push to the right */
+            font-size: 0.9em;
+            padding: 0.6rem 1.2rem;
+         }
+         button#overrideCheckBtn:hover {
+             background-color: #b91c1c;
+         }
+
+
+        .result {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .name {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 0.75rem;
+            background-color: white;
+            border: 1px dashed var(--border-color);
+            border-radius: 4px;
+            margin: 1rem 0;
+            text-align: left;
+            overflow-wrap: break-word;
+        }
+
+        .copy-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.9;
+        }
+
+        .info-box {
+            background-color: #e0f2fe;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            color: var(--text-color);
+        }
+
+        .examples-container {
+            margin-top: 1rem;
+            text-align: left;
+        }
+
+        .examples-container h3 {
+             margin-bottom: 0.5rem;
+             font-size: 1.1rem;
+             color: var(--secondary-color);
+        }
+
+        .example {
+            margin-bottom: 0.5rem;
+            font-family: monospace;
+            background-color: #f8fafc;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            word-break: break-all;
+        }
+
+        .accordion {
+            background-color: #f1f5f9;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 1rem;
+            width: 100%;
+            text-align: left;
+            border: none;
+            outline: none;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0;
+        }
+
+        .accordion:hover {
+            background-color: #e2e8f0;
+        }
+
+        .panel {
+            padding: 1rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            margin-bottom: 1rem;
+        }
+         /* .panel.active handled by JS to set max-height */
+
+
+        .custom-descriptor-container {
+            margin-top: 0;
+        }
+
+        .descriptor-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            gap: 0.5rem;
+        }
+
+        .descriptor-item input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .remove-descriptor {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            flex-shrink: 0;
+             line-height: 1;
+        }
+
+        .add-descriptor {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--success-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+             pointer-events: all;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .required-indicator {
+            color: var(--danger-color);
+            margin-left: 4px;
+            font-weight: normal;
+        }
+
+        #customDescriptorGuidance {
+             margin-bottom: 1rem;
+             font-style: italic;
+             color: #475569;
+             font-size: 0.9rem;
+        }
+
+         .override-note {
+             font-size: 0.8em;
+             color: #64748b;
+             margin-top: 10px;
+             text-align: right;
+         }
+
+         .decode-output div { /* Style for each decoded line */
+             font-family: monospace;
+             margin-bottom: 0.5em;
+             padding-left: 1em;
+             text-indent: -1em; /* Align the [PART] */
+         }
+          .decode-output div strong {
+               font-weight: normal; /* Keep bold only for the PART */
+          }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Revit Naming Convention Tool</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="info-box">
+            <p><strong>Naming Convention Structure:</strong> <code>o_[Category]_[Type/Function]_[Descriptor1]_[Descriptor2]...</code></p>
+            <p>Use underscores <code>_</code> as the primary separator between components. Use underscores or hyphens <code>-</code> *within* complex descriptors like wall layers or sizes (e.g., <code>LGS092_GWB_INS-ACST_GWB</code>, <code>50x150</code>, <code>W12x26</code>).</p>
+            <p>This tool will help you generate standardized names for your Revit elements according to the approved office naming convention.</p>
+        </div>
+
+        <div class="wizard-container">
+            <div class="step active" id="step1">
+                <h2>Step 1: Select Category</h2>
+                <div class="form-group">
+                    <label for="category">Select Revit Category:</label>
+                    <select id="category">
+                        <option value="">-- Select Category --</option>
+                        <option value="WL">Walls</option>
+                        <option value="FL">Floors</option>
+                        <option value="DR">Doors</option>
+                        <option value="WN">Windows</option>
+                        <option value="FURN">Furniture</option>
+                        <option value="CSWK">Casework</option>
+                        <option value="CLG">Ceilings</option>
+                        <option value="RF">Roofs</option>
+                        <option value="COL">Columns</option>
+                        <option value="FRM">Framing</option>
+                        <option value="LF">Lighting Fixtures</option>
+                        <option value="PF">Plumbing Fixtures</option>
+                        <option value="DET">Detail Items</option>
+                        <option value="ANNO">Annotation Symbols</option>
+                         <!-- Add more categories if needed -->
+                    </select>
+                </div>
+                <div class="buttons">
+                    <div></div> <!-- Placeholder for left button -->
+                    <button type="button" onclick="nextStep()" id="step1Next" disabled>Next</button>
+                </div>
+            </div>
+
+            <div class="step" id="step2">
+                <h2>Step 2: Select Type/Function</h2>
+                <div class="form-group">
+                    <label for="function">Select Type/Function:</label>
+                    <select id="function">
+                        <option value="">-- Select Type/Function --</option>
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                     <div class="help-text">Select the primary type or function for this element. Abbreviation shown in brackets.</div>
+                </div>
+                <div class="buttons">
+                    <button type="button" onclick="prevStep()" class="secondary">Previous</button>
+                    <button type="button" onclick="nextStep()" id="step2Next" disabled>Next</button>
+                </div>
+            </div>
+
+            <div class="step" id="step3">
+                <h2>Step 3: Add Descriptors</h2>
+                 <div class="info-box">
+                    <p>Select abbreviations for key features, materials, configuration, or structure below. Descriptors will be separated by underscores <code>_</code> in the final name. Abbreviation shown in brackets on dropdowns.</p>
+                     <p>For complex descriptors like wall layers or multi-part descriptions, use underscores <code>_</code> or hyphens <code>-</code> *within* the descriptor itself (e.g., <code>LGS092_GWB_INS</code>, <code>2DWR1DR</code>, <code>HIGHBACK_MESH</code>, <code>NARROW_FULL</code>).</p>
+                     <p><strong>Required fields (<span class="required-indicator">*</span>) must be selected or filled to enable the "Generate Name & Finish" button.</strong></p> <!-- Added explicit note -->
+                 </div>
+
+                <div id="predefinedDescriptors">
+                    <!-- Will be populated dynamically based on category and function -->
+                </div>
+
+                 <!-- Guidance for Custom Descriptors -->
+                 <div id="customDescriptorGuidance">
+                     <!-- This will be populated by JS -->
+                 </div>
+
+
+                <button type="button" class="accordion">+ Add Custom Descriptors</button>
+                <div class="panel">
+                    <p class="help-text" style="margin-bottom: 1rem;">Add any additional descriptors not listed above. Enter them using your office's established abbreviations. Use underscores <code>_</code> or hyphens <code>-</code> within the descriptor itself if needed (e.g., a specific size like <code>72x60</code>).</p>
+                    <div class="custom-descriptor-container" id="customDescriptors">
+                        <!-- Custom descriptor fields will be added here -->
+                    </div>
+                    <button type="button" class="add-descriptor" onclick="addDescriptorField()">Add Descriptor</button>
+                </div>
+
+                <div class="buttons">
+                    <button type="button" onclick="prevStep()" class="secondary">Previous</button>
+                    <button type="button" id="overrideCheckBtn" onclick="overrideRequiredCheck()">Override Validation</button> <!-- Override Button -->
+                    <button type="button" onclick="generateName()" id="generateNameBtn" disabled>Generate Name & Finish</button> <!-- Renamed Button -->
+                </div>
+                 <div class="override-note" id="overrideNote" style="display: none;">Validation overridden. The name will be generated even if required fields are empty.</div> <!-- Override message -->
+            </div>
+
+            <div class="step" id="step4">
+                <h2>Your Generated Name</h2>
+                <div class="result">
+                    <p>Here's your standardized Revit element name:</p>
+                    <div class="name" id="generatedName"></div>
+                    <button type="button" class="copy-btn" onclick="copyToClipboard()">Copy to Clipboard</button>
+                </div>
+
+                <div class="examples-container">
+                   <h3>Similar Examples:</h3>
+                   <div id="similarExamples">
+                       <!-- Will be populated dynamically -->
+                   </div>
+                </div>
+
+                <div class="buttons">
+                    <button type="button" onclick="startOver()" class="secondary">Start Over</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Decoding Section -->
+        <div class="decoder-container">
+            <h2>Decode a Revit Name</h2>
+            <div class="form-group">
+                <label for="nameToDecode">Enter a Revit Name:</label>
+                <input type="text" id="nameToDecode" placeholder="e.g., O_WL_EXT_CMU8_INS_CAV_BRK4">
+            </div>
+             <div class="buttons" style="margin-top: 1rem;">
+                 <div></div>
+                 <button type="button" id="decodeNameBtn">Decode Name</button>
+             </div>
+            <div class="decode-output" id="decodeOutput" style="margin-top: 1.5rem;">
+                <!-- Decoding result will appear here -->
+            </div>
+        </div>
+
+
+        <footer>
+            <p>Revit Naming Convention Tool | Based on office standard naming procedures</p>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        // Data structure for category-function mapping
+        const categoryFunctions = {
+            "WL": { label: "Wall", type: "Category" }, // Added type for decoding
+            "FL": { label: "Floor", type: "Category" },
+            "DR": { label: "Door", type: "Category" },
+            "WN": { label: "Window", type: "Category" },
+            "FURN": { label: "Furniture", type: "Category" },
+            "CSWK": { label: "Casework", type: "Category" },
+            "CLG": { label: "Ceiling", type: "Category" },
+            "RF": { label: "Roof", type: "Category" },
+            "COL": { label: "Column", type: "Category" },
+            "FRM": { label: "Framing", type: "Category" },
+            "LF": { label: "Lighting Fixture", type: "Category" },
+            "PF": { label: "Plumbing Fixture", type: "Category" },
+            "DET": { label: "Detail Item", type: "Category" },
+            "ANNO": { label: "Annotation Symbol", type: "Category" },
+             // Add more categories if needed
+        };
+
+         // Data structure for Type/Function options
+         const typeFunctions = {
+            "WL": [
+                { value: "INT", label: "Interior" },
+                { value: "EXT", label: "Exterior" },
+                { value: "FND", label: "Foundation" },
+                { value: "CW", label: "Curtain Wall" },
+                { value: "GEN", label: "Generic" }
+            ],
+            "FL": [
+                { value: "INT", label: "Interior" },
+                { value: "EXT", label: "Exterior" },
+                { value: "GEN", label: "Generic" },
+                { value: "STRUCT", label: "Structural" }
+            ],
+            "DR": [
+                { value: "SGL", label: "Single" },
+                { value: "DBL", label: "Double" },
+                { value: "SLD", label: "Sliding" },
+                { value: "OH", label: "Overhead" },
+                { value: "GLZD", label: "Glazed" },
+                { value: "FLSH", label: "Flush" },
+                 { value: "PCKT", label: "Pocket" },
+                 { value: "BYPS", label: "Bypass" },
+                 { value: "FOLD", label: "Folding" },
+                 { value: "PIVOT", label: "Pivot" },
+                 { value: "ROLL", label: "Roll-Up" },
+                 { value: "ACCORD", label: "Accordion" }
+            ],
+            "WN": [
+                { value: "FXD", label: "Fixed" },
+                { value: "CSMT", label: "Casement" },
+                { value: "SLD", label: "Sliding" },
+                { value: "CW", label: "Curtain Wall Panel" },
+                { value: "DBL", label: "Double-hung" },
+                 { value: "SGL", label: "Single-hung" },
+                 { value: "AWN", label: "Awning" },
+                 { value: "HOPR", label: "Hopper" },
+                 { value: "BAY", label: "Bay" },
+                 { value: "BOW", label: "Bow" }
+            ],
+            "FURN": [
+                { value: "CHR", label: "Chair" },
+                { value: "DSK", label: "Desk" },
+                { value: "TBL", label: "Table" },
+                { value: "STOR", label: "Storage" },
+                { value: "SEAT", label: "Seating" },
+                 { value: "BENCH", label: "Bench" },
+                 { value: "SOFA", label: "Sofa" },
+                 { value: "BED", label: "Bed" },
+                 { value: "CAB", label: "Cabinet" },
+                 { value: "UNIT", label: "Unit" }
+            ],
+            "CSWK": [
+                { value: "CAB", label: "Cabinet" },
+                { value: "CTR", label: "Countertop" },
+                { value: "SHELF", label: "Shelving" },
+                { value: "PNL", label: "Panel" },
+                 { value: "ISLD", label: "Island" },
+                 { value: "VN", label: "Vanity" },
+                 { value: "UPR", label: "Upper" },
+                 { value: "BSE", label: "Base" }
+            ],
+            "CLG": [
+                { value: "ACT", label: "Acoustic Tile" },
+                { value: "GWB", label: "Gypsum Board" },
+                { value: "SUSP", label: "Suspended" },
+                { value: "OPEN", label: "Open" },
+                 { value: "PLSTR", label: "Plaster" },
+                 { value: "WOOD", label: "Wood" }
+            ],
+            "RF": [
+                { value: "FLAT", label: "Flat" },
+                { value: "SLOPED", label: "Sloped" },
+                { value: "CURVED", label: "Curved" },
+                { value: "DOME", label: "Dome" },
+                 { value: "HIP", label: "Hip" },
+                 { value: "GABLE", label: "Gable" }
+            ],
+            "COL": [
+                { value: "RECT", label: "Rectangular" },
+                { value: "RND", label: "Round" },
+                { value: "STRUCT", label: "Structural" },
+                { value: "ARCH", label: "Architectural" },
+                 { value: "SQ", label: "Square" },
+                 { value: "PIPE", label: "Pipe" }
+            ],
+            "FRM": [
+                { value: "BM", label: "Beam" },
+                { value: "JST", label: "Joist" },
+                { value: "TRUSS", label: "Truss" },
+                { value: "RAFTER", label: "Rafter" },
+                 { value: "BRACE", label: "Brace" },
+                 { value: "GRIT", label: "Girt" }
+            ],
+            "LF": [
+                { value: "REC", label: "Recessed" },
+                { value: "PEND", label: "Pendant" },
+                { value: "SURF", label: "Surface" },
+                { value: "WALL", label: "Wall Mounted" },
+                { value: "TASK", label: "Task" },
+                 { value: "TRK", label: "Track" },
+                 { value: "UNDRCAB", label: "Under Cabinet" }
+            ],
+            "PF": [
+                { value: "WC", label: "Water Closet" },
+                { value: "SNK", label: "Sink" },
+                { value: "LAV", label: "Lavatory" },
+                { value: "BATH", label: "Bathtub" },
+                { value: "SHW", label: "Shower" },
+                 { value: "FOUNT", label: "Drinking Fountain" },
+                 { value: "FD", label: "Floor Drain" },
+                 { value: "SD", label: "Storm Drain" }
+            ],
+            "DET": [
+                { value: "FLASHING", label: "Flashing" },
+                { value: "TRIM", label: "Trim" },
+                { value: "JOINT", label: "Joint" },
+                { value: "BASE", label: "Base" },
+                 { value: "SEAL", label: "Sealant" },
+                 { value: "REINF", label: "Reinforcement" },
+                 { value: "ANC", label: "Anchorage" }
+            ],
+            "ANNO": [
+                { value: "TAG", label: "Tag" },
+                { value: "SYM", label: "Symbol" },
+                { value: "MARK", label: "Mark" },
+                { value: "GRID", label: "Grid" },
+                 { value: "LEVEL", label: "Level Head" },
+                 { value: "SECT", label: "Section Head" },
+                 { value: "ELEV", label: "Elevation Mark" },
+                 { value: "TXT", label: "Text" },
+                 { value: "DIM", label: "Dimension" }
+            ]
+            // Add more categories if needed
+        };
+
+        // Predefined descriptors for specific category-function combinations
+        // Define type: 'select' or 'text' for input type
+        // Added more Imperial options to selects where practical
+        const predefinedDescriptors = {
+            "WL-INT": [
+                // Structure is often complex layers, best as text
+                { id: "structure", label: "Primary Structure Material", type: "select", required: true, options: {"Light Gauge Steel": "LGS", "Wood Stud": "WD", "CMU": "CMU", "Concrete": "CONC", "Metal Stud": "MTL", "Brick": "BRK"}, placeholder: "e.g., LGS358, WD2x6" }, // Added BRK
+                { id: "structure_details", label: "Structure Details (use _ for layers)", type: "text", required: true, placeholder: "e.g., 358_GWB_INS-ACST_GWB (after LGS), 2x6_GWB_GWB (after WD)" }, // Imperial sizes in placeholder
+                { id: "interior", label: "Interior Finish", type: "select", options: { "GWB": "GWB", "Panel": "PNL", "Tile": "TILE", "Plaster": "PLSTR", "Wood": "WD", "Paint": "PNT", "Exposed": "EXPSD", "Vinyl": "VINYL" }, required: false }, // Added Vinyl
+                { id: "insulation", label: "Insulation Type", type: "select", options: { "Insulation": "INS", "Acoustic": "ACST", "Thermal": "THERM", "Rigid Insulation": "RIGID-INS", "Spray Foam": "SPF" }, required: false }, // Added SPF
+                { id: "rating", label: "Rating", type: "select", options: { "FR30M": "FR30M", "FR60M": "FR60M", "FR90M": "FR90M", "FR120M": "FR120M", "STC40": "STC40", "STC45": "STC45", "STC50": "STC50", "STC55": "STC55", "STC60": "STC60" }, required: false }, // Added STC 60
+                 { id: "thickness", label: "Overall Thickness (Optional)", type: "select", options: {"4 Inch": "4IN", "6 Inch": "6IN", "8 Inch": "8IN", "10 Inch": "10IN", "12 Inch": "12IN", "150mm": "150MM", "200mm": "200MM"}, required: false } // Added common thickness options
+            ],
+             "WL-EXT": [
+                { id: "structure", label: "Primary Structure Material", type: "select", required: true, options: {"Light Gauge Steel": "LGS", "Wood Stud": "WD", "CMU": "CMU", "Concrete": "CONC", "Metal Stud": "MTL", "Brick": "BRK"}, placeholder: "e.g., CMU8, LGS6" }, // Imperial sizes in placeholder
+                { id: "structure_details", label: "Structure Details (use _ if needed)", type: "text", required: true, placeholder: "e.g., 8 (after CMU), 6_GWB (after LGS), 8 (after CONC)" }, // Imperial sizes in placeholder
+                { id: "insulation", label: "Insulation/Cavity", type: "select", options: { "Insulation": "INS", "Cavity": "CAV", "Insulation+Cavity": "INS-CAV", "Insulation+Membrane": "INS_MEMB", "Air Barrier": "AIRB" }, required: false }, // Added Air Barrier
+                { id: "exterior", label: "Exterior Finish", type: "select", options: { "Brick": "BRK", "Stucco": "STUC", "Metal Panel": "MTL-PNL", "Wood Veneer": "WD-VNR", "Stone": "STONE", "Concrete": "CONC", "Curtain Wall": "CW", "Siding": "SDG", "Fiber Cement": "FCM" }, required: false }, // Added Siding, Fiber Cement
+                 { id: "exterior_details", label: "Exterior Finish Details (Optional)", type: "text", required: false, placeholder: "e.g., 4 (after BRK), BATTEN (after SDG)" }, // Imperial size example
+                { id: "rating", label: "Rating", type: "select", options: { "FR30M": "FR30M", "FR60M": "FR60M", "FR90M": "FR90M", "FR120M": "FR120M" }, required: false },
+                 { id: "thickness", label: "Overall Thickness (Optional)", type: "select", options: {"8 Inch": "8IN", "10 Inch": "10IN", "12 Inch": "12IN"}, required: false } // Added common thickness options
+            ],
+             "FL-INT": [
+                { id: "structure", label: "Primary Structure Material", type: "select", required: true, options: {"Concrete": "CONC", "Wood Joist": "WD-JST", "Steel Joist": "STL-JST", "Steel Deck": "STL-DK", "Composite Deck": "COMP-DK", "Plywood": "PLY"}, placeholder: "e.g., CONC6, WD-JST2x10" }, // Added PLY, Imperial sizes
+                 { id: "structure_details", label: "Structure Details (use _ for layers)", type: "text", required: true, placeholder: "e.g., 6 (after CONC), 2x10_PLY (after WD-JST)" }, // Imperial sizes
+                { id: "finish", label: "Floor Finish", type: "select", options: { "Carpet": "CARPET", "Hardwood": "HW", "Tile": "TILE", "VCT": "VCT", "LVT": "LVT", "Concrete Polish": "CONC-POLISH", "Epoxy": "EPOXY", "Terrazzo": "TERRAZZO", "Stone": "STONE", "Rubber": "RUBBER" }, required: false }, // Added Rubber
+                 { id: "rating", label: "Rating", type: "select", options: { "FR30M": "FR30M", "FR60M": "FR60M", "FR90M": "FR90M" }, required: false },
+                  { id: "thickness", label: "Overall Thickness (Optional)", type: "select", options: {"6 Inch": "6IN", "8 Inch": "8IN", "10 Inch": "10IN", "12 Inch": "12IN"}, required: false } // Common Imperial thicknesses
+            ],
+            "DR-SGL": [
+                { id: "material", label: "Frame Material", type: "select", options: { "Wood": "WD", "Hollow Metal": "HM", "Aluminum": "ALUM", "Fiberglass": "FRP", "Glass": "GLS", "Stainless Steel": "SS" }, required: true }, // Added SS
+                 { id: "panel_type", label: "Panel Type", type: "select", options: { "Flush": "FLSH", "Paneled": "PNLD", "Glazed": "GLZD" }, required: true },
+                { id: "construction", label: "Construction/Core", type: "select", options: { "Hollow Core": "HOLLOW", "Solid Core": "SOLID", "Stile and Rail": "STILE-RAIL", "Frameless": "FRMLSS" }, required: false },
+                { id: "glazing_details", label: "Glazing Details (Optional)", type: "select", options: {"Full Glass": "FULL", "Half Glass": "HALF", "Narrow Lite": "NARROW", "Wide Lite": "WIDE", "Fire Rated Glass": "FR-GLS", "Wire Glass": "WIRE-GLS"}, required: false }, // Added Wire Glass
+                { id: "rating", label: "Rating", type: "select", options: { "FR20M": "FR20M", "FR30M": "FR30M", "FR45M": "FR45M", "FR60M": "FR60M", "FR90M": "FR90M" }, required: false },
+                { id: "feature", label: "Feature (Optional)", type: "select", options: {"ADA Compliant": "ADA", "Louvered": "LOUVERED", "Leaded": "LEADED", "Sound Rated": "SOUND"}, required: false }, // Added Sound Rated
+                { id: "size", label: "Size (Optional)", type: "text", required: false, placeholder: "e.g., 3070, 3'-0\"x7'-0\"" } // Added Imperial example
+            ],
+             "DR-DBL": [
+                { id: "material", label: "Frame Material", type: "select", options: { "Wood": "WD", "Hollow Metal": "HM", "Aluminum": "ALUM", "Fiberglass": "FRP", "Glass": "GLS", "Stainless Steel": "SS" }, required: true },
+                 { id: "panel_type", label: "Panel Type", type: "select", options: { "Flush": "FLSH", "Paneled": "PNLD", "Glazed": "GLZD" }, required: true },
+                { id: "construction", label: "Construction/Core", type: "select", options: { "Hollow Core": "HOLLOW", "Solid Core": "SOLID", "Stile and Rail": "STILE-RAIL", "Frameless": "FRMLSS" }, required: false },
+                { id: "glazing_details", label: "Glazing Details (Optional)", type: "select", options: {"Full Glass": "FULL", "Half Glass": "HALF", "Narrow Lite": "NARROW", "Wide Lite": "WIDE", "Fire Rated Glass": "FR-GLS", "Wire Glass": "WIRE-GLS"}, required: false },
+                { id: "rating", label: "Rating", type: "select", options: { "FR20M": "FR20M", "FR30M": "FR30M", "FR45M": "FR45M", "FR60M": "FR60M", "FR90M": "FR90M" }, required: false },
+                { id: "feature", label: "Feature (Optional)", type: "select", options: {"ADA Compliant": "ADA", "Louvered": "LOUVERED", "Leaded": "LEADED", "Sound Rated": "SOUND"}, required: false },
+                { id: "size", label: "Size (Optional)", type: "text", required: false, placeholder: "e.g., 6070, 6'-0\"x7'-0\"" } // Added Imperial example
+            ],
+            "WN-FXD": [
+                { id: "material", label: "Frame Material", type: "select", options: { "Metal": "MTL", "Aluminum": "ALUM", "Wood": "WD", "Vinyl": "VINYL", "Fiberglass": "FGRP", "Composite": "COMP" }, required: true }, // Added Composite
+                { id: "glazing", label: "Glazing Type", type: "select", options: { "Insulated": "INS_GLZD", "Double Glazed": "DBL_GLZD", "Triple Glazed": "TRPL_GLZD", "Tempered": "TEMP", "Tinted": "TINT", "Low-E": "LOW-E", "Laminated": "LAM", "Spandrel": "SPNDRL", "Fritted": "FRITTED" }, required: true }, // Added Fritted
+                 { id: "feature", label: "Feature (Optional)", type: "select", options: { "Louvered": "LOUVERED", "Grille": "GRILLE", "Impact Rated": "IMPACT", "Fineline": "FNLINE" }, required: false }, // Added Fineline
+                 { id: "size", label: "Size/Configuration (Optional)", type: "text", required: false, placeholder: "e.g., 3050x5060, 3'-0\"x5'-0\", BAY" } // Added Imperial example
+            ],
+             "FURN-CHR": [
+                { id: "type", label: "Chair Type", type: "select", options: { "Task": "TASK", "Side": "SIDE", "Arm": "ARM", "Lounge": "LOU", "Stacking": "STK", "Conference": "CONF", "Guest": "GST", "Stool": "STOOL", "Beam Seating": "BM-SEAT" }, required: true }, // Added Beam Seating
+                { id: "material", label: "Material/Finish", type: "select", options: { "Fabric": "FAB", "Leather": "LTHR", "Mesh": "MESH", "Plastic": "PLAS", "Wood": "WD", "Metal": "MTL", "Vinyl": "VINYL", "Upholstered": "UPH" }, required: false }, // Added Upholstered
+                { id: "feature", label: "Feature (Optional)", type: "select", options: { "Highback": "HIGHBACK", "Lowback": "LOWBACK", "Swivel": "SWIVEL", "Caster Base": "CSTR", "Tablet Arm": "TBLT-ARM", "Folding": "FOLD", "Arms": "ARMS", "No Arms": "NO-ARMS" }, required: false }, // Added Arms/No Arms
+                 { id: "size", label: "Size/Config (Optional)", type: "text", required: false, placeholder: "e.g., STD, LRG, ADA" }
+             ],
+             "FURN-DSK": [
+                 { id: "shape", label: "Shape", type: "select", options: { "Rectangular": "RECT", "L-Shape": "LSHAPE", "U-Shape": "USHAPE", "Corner": "CRNR", "Round": "RND", "Oval": "OVAL", "Standing": "STAND", "Peninsula": "PENINSULA" }, required: true }, // Added Peninsula
+                 { id: "material", label: "Material/Finish", type: "select", options: { "Laminate": "LAM", "Wood Veneer": "WD-VNR", "Wood Solid": "WD-SOLID", "Metal": "MTL", "Stone": "STONE", "Glass": "GLS", "Markerboard": "MRKRBD" }, required: false }, // Added Markerboard
+                 { id: "feature", label: "Feature (Optional)", type: "select", options: { "Adjustable Height": "ADJ-H", "Keyboard Tray": "KB-TRAY", "Modesty Panel": "MOD-PNL", "Integrated Power": "INT-PWR", "File Pedestal": "FILE-PED" }, required: false }, // Added File Pedestal
+                 { id: "size", label: "Size/Config (Optional)", type: "text", required: false, placeholder: "e.g., 1800x900, 72x36, 1800x1500, W900D600" } // Added Imperial example
+             ],
+             "CSWK-CAB": [ // Generic Cabinet, details likely in descriptors
+                 { id: "type", label: "Cabinet Type", type: "select", options: { "Base": "BSE", "Upper": "UPR", "Tall": "TALL", "Wall": "WALL", "Island": "ISLD", "Pantry": "PTRY", "Vanity": "VN", "Display": "DSPY" }, required: true }, // Added Display
+                 { id: "configuration", label: "Config/Doors/Drawers", type: "select", options: { "1 Door": "1DR", "2 Door": "2DR", "1 Drawer": "1DWR", "2 Drawer": "2DWR", "3 Drawer": "3DWR", "4 Drawer": "4DWR", "Open": "OPEN", "1DR1DWR": "1DR1DWR", "2DR1DWR": "2DR1DWR", "2DWR1DR": "2DWR1DR", "PULLOUT": "PULLOUT", "Glazed Doors": "GLZ-DRS" }, required: true },
+                 { id: "material", label: "Material/Finish", type: "select", options: { "Plastic Laminate": "PLAM", "Wood Veneer": "WD-VNR", "Wood Solid": "WD-SOLID", "Painted": "PAINTED", "Metal": "MTL", "Stainless Steel": "SS", "Melamine": "MEL" }, required: false },
+                 { id: "feature", label: "Feature (Optional)", type: "select", options: { "ADA Compliant": "ADA", "Adjustable Shelves": "ADJ-SHLF", "Locks": "LOCKS", "Toe Kick": "TK", "No Toe Kick": "NO-TK", "Soft Close": "SFT-CLS" }, required: false }, // Added Soft Close
+                 { id: "size", label: "Size (Optional)", type: "text", required: false, placeholder: "e.g., 900MM_W, 36IN_W" }
+             ],
+            "CSWK-CTR": [
+                 { id: "shape", label: "Shape", type: "select", options: { "Straight": "STR", "L-Shape": "LSHAPE", "U-Shape": "USHAPE", "Corner": "CRNR", "Island": "ISLD", "Curved": "CRV" }, required: true },
+                 { id: "material", label: "Material", type: "select", options: { "Stone": "STONE", "Solid Surface": "SSURF", "Laminate": "LAM", "Wood": "WD", "Concrete": "CONC", "Stainless Steel": "SS", "Quartz": "QUARTZ", "Granite": "GRANITE", "Marble": "MARBLE" }, required: true }, // Added Granite, Marble
+                 { id: "feature", label: "Feature (Optional)", type: "select", options: { "ADA Compliant": "ADA", "Integral Sink": "INT-SNK", "Backsplash": "BSPLSH", "Waterfall End": "WTRFLL-END", "Eased Edge": "EASE-EDGE", "Bullnose Edge": "BULL-EDGE", "Ogee Edge": "OGEE-EDGE" }, required: false }, // Added Ogee Edge
+                 { id: "size", label: "Size (Optional)", type: "text", required: false, placeholder: "e.g., 3000MM_L, 10FT_L, 600MM_D, 24IN_D" } // Added Imperial depth example
+             ],
+            "CLG-ACT": [
+                 { id: "size", label: "Panel Size", type: "select", options: { "600x600": "600x600", "600x1200": "600x1200", "2x2": "2x2", "2x4": "2x4", "1x4": "1x4", "1200x1200": "1200x1200" }, required: true },
+                 { id: "grid", label: "Grid Type", type: "select", options: { "Lay-in": "LAYIN", "Tegular": "TEG", "Fineline": "FNLINE", "Bolt-Slot": "BOLT", "Exposed Grid": "EXPSD-GRID", "Concealed Grid": "CONC-GRID" }, required: true },
+                 { id: "acoustics", label: "Acoustics (Optional)", type: "select", options: { "NRC 0.70": "NRC70", "NRC 0.80": "NRC80", "CAC 35": "CAC35", "CAC 40": "CAC40", "High NRC": "HI-NRC", "High CAC": "HI-CAC" }, required: false }
+            ],
+             "CLG-GWB": [
+                 { id: "structure", label: "Structure Type", type: "select", options: { "Suspended": "SUSP", "Framed": "FRMD", "Direct Applied": "DIR-APL", "Acoustic": "ACST" }, required: true }, // Added Acoustic
+                 { id: "rating", label: "Rating (Optional)", type: "select", options: { "FR60M": "FR60M", "FR120M": "FR120M" }, required: false },
+                 { id: "finish", label: "Finish (Optional)", type: "select", options: {"Painted": "PAINTED", "Textured": "TEXTURED", "Smooth": "SMOOTH"}, required: false }
+             ],
+             "COL-STRUCT": [
+                 { id: "material", label: "Material", type: "select", options: { "Steel": "STL", "Concrete": "CONC", "Wood": "WD", "CMU": "CMU", "Aluminum": "ALUM" }, required: true }, // Added Aluminum
+                 { id: "shape", label: "Shape", type: "select", options: { "Rectangular": "RECT", "Round": "RND", "Square": "SQ", "Pipe": "PIPE", "W-Shape": "W", "HSS": "HSS", "Angle": "L", "Channel": "C" }, required: true },
+                 { id: "size", label: "Size/Dimensions", type: "text", required: true, placeholder: "e.g., W16x26, HSS6x6x3/8, 16x24, PIPE4, 6x8" }, // Imperial examples
+                 { id: "fireproofing", label: "Fireproofing (Optional)", type: "select", options: { "FR60M": "FR60M", "FR120M": "FR120M", "Sprayed": "SPRAYED", "Board": "BOARD" }, required: false }
+             ],
+             "FRM-BM": [
+                 { id: "material", label: "Material", type: "select", options: { "Steel": "STL", "Wood": "WD", "Concrete": "CONC", "Cold-Formed Metal": "CFMF", "Aluminum": "ALUM" }, required: true }, // Added Aluminum
+                 { id: "shape", label: "Shape", type: "select", options: { "W-Shape": "W", "S-Shape": "S", "C-Shape": "C", "L-Shape": "L", "HSS": "HSS", "Glu-Lam": "GLULAM", "LSL": "LSL", "LVL": "LVL", "I-Joist": "I-JST", "Composite": "COMP", "Pryschwa": "PRYS" }, required: true }, // Added Pryschwa
+                 { id: "size", label: "Size/Dimensions", type: "text", required: true, placeholder: "e.g., W12x26, 6x12, 175x300, GLULAM24F, LSL1.9x11.875" }, // Imperial examples
+                 { id: "fireproofing", label: "Fireproofing (Optional)", type: "select", options: { "FR60M": "FR60M", "FR120M": "FR120M" }, required: false }
+             ],
+             "LF-REC": [
+                 { id: "form", label: "Form/Shape", type: "select", options: { "Troffer": "TROF", "Downlight": "DL", "Linear": "LINEAR", "Square": "SQ", "Round": "RND", "Accent": "ACCENT", "Wall Wash": "WW" }, required: true }, // Added Wall Wash
+                 { id: "source", label: "Light Source", type: "select", options: { "LED": "LED", "Fluorescent": "FLUOR", "Halogen": "HAL", "Incandescent": "INC", "HID": "HID", "CMH": "CMH" }, required: true }, // Added CMH
+                 { id: "feature", label: "Feature (Optional)", type: "select", options: { "Dimmable": "DIM", "Emergency": "EMG", "Acoustic Panel": "ACST-PNL", "High Output": "HO", "Wet Location": "WET", "Damp Location": "DAMP", "Adjustable": "ADJ" }, required: false }, // Added Adjustable
+                 { id: "size", label: "Size (Optional)", type: "select", options: {"24x24": "24x24", "24x48": "24x48", "12x48": "12x48", "6IN": "6IN", "8IN": "8IN", "4IN": "4IN"}, required: false } // Added common imperial/metric sizes as select
+             ],
+             "PF-WC": [
+                 { id: "mount", label: "Mount", type: "select", options: { "Floor Mounted": "FLOOR", "Wall Hung": "WALL", "Back Outlet": "BK-OUTLET" }, required: true }, // Added Back Outlet
+                 { id: "tank", label: "Tank Type", type: "select", options: { "Tank": "TANK", "Flush Valve": "FLUSH-V", "Concealed Tank": "CONC-TANK" }, required: true }, // Added Concealed Tank
+                 { id: "feature", label: "Feature (Optional)", type: "select", options: { "ADA Compliant": "ADA", "Low Flow": "LOW-FLOW", "Dual Flush": "DUAL-F", "Siphon Jet": "SIPHON", "Elongated": "ELONG", "Round": "ROUND" }, required: false } // Added Elongated/Round shape
+             ],
+             "PF-SNK": [
+                 { id: "type", label: "Type", type: "select", options: { "Vanity": "VAN", "Kitchen": "KITCHEN", "Utility": "UTIL", "Lab": "LAB", "Bar": "BAR", "Service": "SERV", "Service Mop": "SERV-MOP", "Lavatory": "LAV", "Restroom": "RM" }, required: true }, // Added Lavatory, Restroom
+                 { id: "mount", label: "Mount", type: "select", options: { "Undermount": "UNDERMNT", "Drop-in": "DROP-IN", "Wall Hung": "WALL", "Pedestal": "PED", "Integral": "INTEGRAL", "Apron Front": "APRON-F", "Countertop": "CTR", "Self-Rimming": "SELF-RIM" }, required: true }, // Added Self-Rimming
+                 { id: "material", label: "Material", type: "select", options: { "Stainless Steel": "SS", "Porcelain": "PORC", "Acrylic": "ACRYL", "Cast Iron": "CI", "Composite": "COMP", "Solid Surface": "SSURF", "Fireclay": "FIRECLAY" }, required: true },
+                 { id: "feature", label: "Feature (Optional)", type: "select", options: { "ADA Compliant": "ADA", "Double Bowl": "DBL-BOWL", "Single Bowl": "SGL-BOWL", "Triple Bowl": "TRPL-BOWL", "Drainboard": "DRNBRD" }, required: false }, // Added Drainboard
+                  { id: "size", label: "Size (Optional)", type: "text", required: false, placeholder: "e.g., 600MM_W, 30IN_W" }
+             ],
+             "DET-FLASHING": [ // Added detail item example
+                 { id: "location", label: "Location", type: "select", required: true, options: {"Sill": "SILL", "Head": "HEAD", "Jamb": "JAMB", "Wall Base": "WALL-BSE", "Roof Edge": "RF-EDGE", "Parapet": "PARA", "Expansion Joint": "EXP-JT"} }, // Added Parapet, Exp Joint
+                 { id: "material", label: "Material", type: "select", required: true, options: {"Metal": "MTL", "Membrane": "MEMB", "Rubberized Asphalt": "RUB-ASPH"} }, // Added Rub Asphalt
+                  { id: "thickness", label: "Thickness/Gauge (Optional)", type: "select", options: {"24 Gauge": "24GA", "22 Gauge": "22GA", "16oz": "16OZ", "60Mil": "60MIL", "40Mil": "40MIL"}, required: false } // Added common gauges/mils
+             ],
+             "ANNO-TAG": [ // Added anno symbol example
+                 { id: "element", label: "Element Tagged", type: "select", required: true, options: {"Door": "DR", "Window": "WN", "Room": "RM", "Area": "AREA", "Wall": "WL", "Floor": "FL", "Equipment": "EQUI", "Column": "COL", "Beam": "BM", "Duct": "DUCT", "Pipe": "PIPE", "Fixture": "FIXT", "Furniture": "FURN", "Casework": "CSWK"} }, // More elements
+                 { id: "type", label: "Tag Type", type: "select", required: true, options: {"Standard": "STD", "Keynote": "KEYN", "Material": "MATL", "Identity": "ID", "Type Mark": "TYPE-MK"} }, // Added Identity, Type Mark
+                  { id: "style", label: "Style (Optional)", type: "select", options: {"Circle": "CIRC", "Hexagon": "HEX", "Square": "SQ", "Leader": "LEADER", "No Leader": "NO-LEADER"}, required: false } // Added styles
+             ],
+             // Add more predefined descriptor sets...
+
+             // Generic catch-all for categories/functions without specific sets
+             // Note: These will only appear if the category-function combo is NOT in the list above
+             "_GENERIC_": [
+                 { id: "descriptor1", label: "Descriptor 1 (Optional)", type: "text", required: false, placeholder: "e.g., STD, SIMPLE, IN, CM, STL" },
+                 { id: "descriptor2", label: "Descriptor 2 (Optional)", type: "text", required: false, placeholder: "e.g., 24x48, 16x24, W12x26, HSS6" }, // Imperial examples
+                 { id: "descriptor3", label: "Descriptor 3 (Optional)", type: "text", required: false },
+                 { id: "descriptor4", label: "Descriptor 4 (Optional)", type: "text", required: false }
+             ]
+        };
+
+         // Mapping for custom descriptor guidance text based on category/function type
+        const customGuidanceMapping = {
+            "WL-INT": "e.g., Structure Details (358_GWB), Finishes (PNL), Ratings (STC45), Thickness (6IN), Fireproofing (SPRAYED)", // Imperial examples
+            "WL-EXT": "e.g., Structure Details (8), Insulation/Cavity (INS-CAV), Exterior Finish Details (4), Ratings (FR60M), Thickness (10IN)", // Imperial examples
+            "FL-INT": "e.g., Structure Details (6), Finishes (HW), Ratings (FR60M), Thickness (8IN)", // Imperial examples
+            "DR-SGL": "e.g., Construction (HOLLOW), Glazing Details (FULL), Features (ADA), Size (3070, 3'-0\"x7'-0\")", // Imperial examples
+            "DR-DBL": "e.g., Construction (NARROW), Glazing Details (FULL), Features (LOUVERED), Size (6070, 6'-0\"x7'-0\")", // Imperial examples
+            "WN-FXD": "e.g., Features (IMPACT), Size (3050x5060, 3'-0\"x5'-0\")", // Imperial examples
+            "FURN-CHR": "e.g., Material (MESH), Features (HIGHBACK), Size (STD)",
+            "FURN-DSK": "e.g., Material (LAM), Features (ADJ-H), Size (72x36)", // Imperial example
+            "CSWK-CAB": "e.g., Material (PLAM), Features (ADA), Size (36IN_W)", // Imperial example
+            "CSWK-CTR": "e.g., Features (INT-SNK), Size (10FT_L, 24IN_D)", // Imperial examples
+             "CLG-ACT": "e.g., Acoustics (NRC80), Size (24x48)", // Imperial example
+             "CLG-GWB": "e.g., Ratings (FR60M), Finish (PAINTED)",
+             "COL-STRUCT": "e.g., Section/Size (W16x26, HSS6), Fireproofing (FR60M)", // Imperial examples
+             "FRM-BM": "e.g., Section/Size (W12x26, 2x10), Fireproofing (FR60M)", // Imperial examples
+             "LF-REC": "e.g., Features (DIM), Size (24x48, 6IN)", // Imperial examples
+             "PF-WC": "e.g., Features (ADA)",
+             "PF-SNK": "e.g., Features (DBL-BOWL), Size (30IN_W)", // Imperial example
+             "DET-FLASHING": "e.g., Thickness (24GA)", // Imperial example
+             "ANNO-TAG": "e.g., Scale (1-50), Details (LEADER)", // Example custom
+            // Fallback guidance if a specific combo isn't mapped
+            "_GENERIC_": "Common custom descriptors might include: Material, Size/Dimensions (e.g., 24x48, 12IN, W12x26, HSS6), Feature, Configuration, Rating, Finish, Scale, Detail." // Expanded generic list with Imperial examples
+        };
+
+
+        // Example names for each category (used for step 4) - Updated to use underscores and Imperial sizes
+        const examples = {
+            "WL": [
+                "o_WL_INT_LGS_358_GWB_INS-ACST_GWB", // Example updated with Imperial size
+                "o_WL_INT_WD_2x6_GWB_GWB_FR60M", // Example updated with Imperial size
+                "o_WL_EXT_CMU_8_INS-CAV_BRK_4", // Example updated with Imperial size
+                "o_WL_EXT_LGS_6_GWB_INS_MEMB_STUC", // Example updated with Imperial size
+                "o_WL_FND_CONC_8", // Example updated with Imperial size
+                "o_WL_CW_STD_CAP_VERT_2x6", // Example updated with Imperial size
+                "o_WL_GEN_INT_4IN" // Example updated with Imperial size
+            ],
+            "FL": [
+                "o_FL_INT_CONC_6_CARPET", // Example updated with Imperial size
+                "o_FL_INT_WD-JST_2x10_PLY_HW", // Example updated with Imperial size
+                "o_FL_EXT_CONC_4_PAVER", // Example updated with Imperial size
+                "o_FL_GEN_INT_8IN" // Example updated with Imperial size
+            ],
+            "DR": [
+                "o_DR_SGL_FLSH_WD_HOLLOW_FR30M",
+                "o_DR_DBL_GLZD_MTL_NARROW_FULL",
+                "o_DR_SLD_PCKT_WD",
+                "o_DR_OH_SECT_MTL_INS_4PNL"
+            ],
+            "WN": [
+                "o_WN_FXD_MTL_INS_GLZD",
+                "o_WN_CSMT_SGL_WD",
+                "o_WN_SLD_HORZ_VINYL",
+                "o_WN_CW_PNL_SPNDRL_INS"
+            ],
+            "FURN": [
+                "o_FURN_CHR_TASK_HIGHBACK_MESH",
+                "o_FURN_DSK_RECT_LSHAPE_72x60", // Imperial size example
+                "o_FURN_TBL_CONF_RECT_BOAT_96IN" // Imperial size example
+            ],
+            "CSWK": [
+                "o_CSWK_CAB_BSE_2DWR1DR_PLAM",
+                "o_CSWK_CAB_UPR_2DR_GLZ_WD",
+                "o_CSWK_CTR_STR_STONE_ADA"
+            ],
+            "CLG": [
+                "o_CLG_ACT_24x48_LAYIN", // Imperial size example
+                "o_CLG_GWB_SUSP"
+            ],
+            "RF": [
+                "o_RF_FLAT_MEMBRANE_INS",
+                "o_RF_SLOPED_ASPH_SHGL"
+            ],
+            "COL": [
+                "o_COL_RECT_CONC_16x24", // Imperial size example
+                "o_COL_RND_STL_HSS6" // Imperial size example
+            ],
+            "FRM": [
+                "o_FRM_BM_STL_W12x26", // Imperial size example
+                "o_FRM_JST_WD_2x10" // Imperial size example
+            ],
+            "LF": [
+                "o_LF_REC_TROF_LED_24x48", // Imperial size example
+                "o_LF_PEND_DRUM_SMALL"
+            ],
+            "PF": [
+                "o_PF_WC_FLOOR_TANK",
+                "o_PF_SNK_VAN_UNDERMNT"
+            ],
+            "DET": [
+                "o_DET_FLASHING_SILL_MTL_WN"
+            ],
+            "ANNO": [
+                "o_ANNO_TAG_DOOR_STD",
+                "o_ANNO_SYM_NORTH_ARR_SIMPLE"
+            ]
+        };
+
+        // --- Abbreviation Lookup Table for Decoding ---
+        // This will be built dynamically from the data structures above
+        const abbrToDescription = {};
+
+        function buildAbbreviationLookup() {
+            // Add Prefix
+            abbrToDescription["O"] = "Office Standard Prefix";
+
+            // Add Categories
+            for (const abbr in categoryFunctions) {
+                abbrToDescription[abbr] = categoryFunctions[abbr].label;
+            }
+
+            // Add Type/Functions
+            for (const categoryAbbr in typeFunctions) {
+                typeFunctions[categoryAbbr].forEach(func => {
+                    abbrToDescription[func.value] = func.label;
+                });
+            }
+
+            // Add Predefined Descriptors
+            for (const key in predefinedDescriptors) {
+                predefinedDescriptors[key].forEach(descriptor => {
+                    if (descriptor.type === 'select' && descriptor.options) {
+                        for (const description in descriptor.options) {
+                            const abbr = descriptor.options[description];
+                            // Avoid overwriting if an abbreviation is used for multiple things (less common but possible)
+                            // Or you could store an array of descriptions if needed.
+                            // For simplicity, the first description found wins here.
+                            if (!abbrToDescription[abbr]) {
+                                abbrToDescription[abbr] = description; // Map abbreviation to description
+                            }
+                        }
+                    }
+                    // Text inputs don't have predefined options to add to the lookup table
+                });
+            }
+
+            // Add any missing common abbreviations explicitly if they aren't covered above
+            // based on your examples or cheat sheet highlights
+             if (!abbrToDescription["LGS"]) abbrToDescription["LGS"] = "Light Gauge Steel";
+             if (!abbrToDescription["WD"]) abbrToDescription["WD"] = "Wood";
+             if (!abbrToDescription["CMU"]) abbrToDescription["CMU"] = "CMU (Concrete Masonry Unit)";
+             if (!abbrToDescription["CONC"]) abbrToDescription["CONC"] = "Concrete";
+             if (!abbrToDescription["MTL"]) abbrToDescription["MTL"] = "Metal";
+             if (!abbrToDescription["BRK"]) abbrToDescription["BRK"] = "Brick";
+             if (!abbrToDescription["GWB"]) abbrToDescription["GWB"] = "Gypsum Wall Board";
+             if (!abbrToDescription["INS"]) abbrToDescription["INS"] = "Insulation";
+             if (!abbrToDescription["ACST"]) abbrToDescription["ACST"] = "Acoustic";
+             if (!abbrToDescription["CAV"]) abbrToDescription["CAV"] = "Cavity";
+             if (!abbrToDescription["MEMB"]) abbrToDescription["MEMB"] = "Membrane";
+             if (!abbrToDescription["STUC"]) abbrToDescription["STUC"] = "Stucco";
+             if (!abbrToDescription["FR60M"]) abbrToDescription["FR60M"] = "60 Minute Fire Rated";
+             if (!abbrToDescription["FR30M"]) abbrToDescription["FR30M"] = "30 Minute Fire Rated";
+             if (!abbrToDescription["FR20M"]) abbrToDescription["FR20M"] = "20 Minute Fire Rated";
+             if (!abbrToDescription["FR45M"]) abbrToDescription["FR45M"] = "45 Minute Fire Rated";
+             if (!abbrToDescription["FR90M"]) abbrToDescription["FR90M"] = "90 Minute Fire Rated";
+             if (!abbrToDescription["FR120M"]) abbrToDescription["FR120M"] = "120 Minute Fire Rated";
+             if (!abbrToDescription["STC45"]) abbrToDescription["STC45"] = "STC 45"; // Add other STC values too if needed
+             if (!abbrToDescription["PLY"]) abbrToDescription["PLY"] = "Plywood";
+             if (!abbrToDescription["HW"]) abbrToDescription["HW"] = "Hardwood";
+             if (!abbrToDescription["PAVER"]) abbrToDescription["PAVER"] = "Paver";
+             if (!abbrToDescription["HOLLOW"]) abbrToDescription["HOLLOW"] = "Hollow Core";
+             if (!abbrToDescription["NARROW"]) abbrToDescription["NARROW"] = "Narrow Stile";
+             if (!abbrToDescription["FULL"]) abbrToDescription["FULL"] = "Full Glass"; // Or Full Panel etc. context dependent
+             if (!abbrToDescription["PCKT"]) abbrToDescription["PCKT"] = "Pocket";
+             if (!abbrToDescription["SECT"]) abbrToDescription["SECT"] = "Sectional"; // Garage door example
+             if (!abbrToDescription["VINYL"]) abbrToDescription["VINYL"] = "Vinyl";
+             if (!abbrToDescription["SPNDRL"]) abbrToDescription["SPNDRL"] = "Spandrel";
+             if (!abbrToDescription["MESH"]) abbrToDescription["MESH"] = "Mesh";
+             if (!abbrToDescription["LSHAPE"]) abbrToDescription["LSHAPE"] = "L-Shape";
+             if (!abbrToDescription["BOAT"]) abbrToDescription["BOAT"] = "Boat Shape";
+             if (!abbrToDescription["2DWR1DR"]) abbrToDescription["2DWR1DR"] = "2 Drawer 1 Door";
+             if (!abbrToDescription["PLAM"]) abbrToDescription["PLAM"] = "Plastic Laminate";
+             if (!abbrToDescription["UPR"]) abbrToDescription["UPR"] = "Upper"; // Cabinet type
+             if (!abbrToDescription["BSE"]) abbrToDescription["BSE"] = "Base"; // Cabinet type
+             if (!abbrToDescription["GLZ"]) abbrToDescription["GLZ"] = "Glazed"; // Descriptor
+             if (!abbrToDescription["STR"]) abbrToDescription["STR"] = "Straight"; // Countertop type
+             if (!abbrToDescription["STONE"]) abbrToDescription["STONE"] = "Stone Material"; // Descriptor/Material
+             if (!abbrToDescription["ADA"]) abbrToDescription["ADA"] = "ADA Compliant"; // Descriptor/Feature
+             if (!abbrToDescription["ACT"]) abbrToDescription["ACT"] = "Acoustic Tile";
+             if (!abbrToDescription["SUSP"]) abbrToDescription["SUSP"] = "Suspended";
+             if (!abbrToDescription["MEMBRANE"]) abbrToDescription["MEMBRANE"] = "Membrane";
+             if (!abbrToDescription["ASPH-SHGL"]) abbrToDescription["ASPH-SHGL"] = "Asphalt Shingle";
+             if (!abbrToDescription["RECT"]) abbrToDescription["RECT"] = "Rectangular";
+             if (!abbrToDescription["RND"]) abbrToDescription["RND"] = "Round";
+             if (!abbrToDescription["STL"]) abbrToDescription["STL"] = "Steel";
+             if (!abbrToDescription["HSS"]) abbrToDescription["HSS"] = "HSS Steel Shape"; // Note: size follows HSS
+             if (!abbrToDescription["BM"]) abbrToDescription["BM"] = "Beam";
+             if (!abbrToDescription["JST"]) abbrToDescription["JST"] = "Joist";
+             if (!abbrToDescription["W"]) abbrToDescription["W"] = "W-Shape Steel Beam"; // Note: size follows W
+             if (!abbrToDescription["REC"]) abbrToDescription["REC"] = "Recessed";
+             if (!abbrToDescription["TROF"]) abbrToDescription["TROF"] = "Troffer";
+             if (!abbrToDescription["LED"]) abbrToDescription["LED"] = "LED Source";
+             if (!abbrToDescription["PEND"]) abbrToDescription["PEND"] = "Pendant";
+             if (!abbrToDescription["DRUM"]) abbrToDescription["DRUM"] = "Drum";
+             if (!abbrToDescription["SMALL"]) abbrToDescription["SMALL"] = "Small Size"; // Or other size descriptors
+             if (!abbrToDescription["WC"]) abbrToDescription["WC"] = "Water Closet (Toilet)";
+             if (!abbrToDescription["FLOOR"]) abbrToDescription["FLOOR"] = "Floor Mounted";
+             if (!abbrToDescription["TANK"]) abbrToDescription["TANK"] = "Tank Type";
+             if (!abbrToDescription["SNK"]) abbrToDescription["SNK"] = "Sink";
+             if (!abbrToDescription["VAN"]) abbrToDescription["VAN"] = "Vanity Type";
+             if (!abbrToDescription["UNDERMNT"]) abbrToDescription["UNDERMNT"] = "Undermount Mounted";
+             if (!abbrToDescription["FLASHING"]) abbrToDescription["FLASHING"] = "Flashing";
+             if (!abbrToDescription["SILL"]) abbrToDescription["SILL"] = "Sill Location";
+             if (!abbrToDescription["WN"]) abbrToDescription["WN"] = "Window Element"; // Can be Element for Tag
+             if (!abbrToDescription["TAG"]) abbrToDescription["TAG"] = "Tag Symbol";
+             if (!abbrToDescription["STD"]) abbrToDescription["STD"] = "Standard";
+             if (!abbrToDescription["SYM"]) abbrToDescription["SYM"] = "Symbol";
+             if (!abbrToDescription["NORTH-ARR"]) abbrToDescription["NORTH-ARR"] = "North Arrow";
+             if (!abbrToDescription["SIMPLE"]) abbrToDescription["SIMPLE"] = "Simple";
+
+             // Add Imperial/Metric sizes explicitly if not covered by options
+             if (!abbrToDescription["LGS358"]) abbrToDescription["LGS358"] = "3-5/8\" Light Gauge Steel Studs";
+             if (!abbrToDescription["LGS6"]) abbrToDescription["LGS6"] = "6\" Light Gauge Steel Studs";
+             if (!abbrToDescription["WD2x6"]) abbrToDescription["WD2x6"] = "2x6 Wood Studs";
+             if (!abbrToDescription["CMU8"]) abbrToDescription["CMU8"] = "8\" CMU";
+             if (!abbrToDescription["BRK4"]) abbrToDescription["BRK4"] = "4\" Nominal Brick";
+             if (!abbrToDescription["CONC8"]) abbrToDescription["CONC8"] = "8\" Concrete";
+             if (!abbrToDescription["4IN"]) abbrToDescription["4IN"] = "4 Inch";
+             if (!abbrToDescription["2x6"]) abbrToDescription["2x6"] = "2\"x6\" Size"; // Used in CW example
+             if (!abbrToDescription["2x10"]) abbrToDescription["2x10"] = "2x10 Wood Joist Size";
+             if (!abbrToDescription["CONC6"]) abbrToDescription["CONC6"] = "6\" Concrete";
+             if (!abbrToDescription["8IN"]) abbrToDescription["8IN"] = "8 Inch";
+             if (!abbrToDescription["72x60"]) abbrToDescription["72x60"] = "72\"x60\" Size";
+             if (!abbrToDescription["96IN"]) abbrToDescription["96IN"] = "96 Inch Long";
+             if (!abbrToDescription["24x48"]) abbrToDescription["24x48"] = "24\"x48\" Size";
+             if (!abbrToDescription["16x24"]) abbrToDescription["16x24"] = "16\"x24\" Size";
+             if (!abbrToDescription["W12x26"]) abbrToDescription["W12x26"] = "W12x26 Steel Beam"; // Specific section
+             if (!abbrToDescription["HSS6"]) abbrToDescription["HSS6"] = "6\" HSS Steel"; // Specific section
+
+            // Add more mappings as needed from your full abbreviation list!
+            // abbrToDescription["YOUR_ABBR"] = "Your Description";
+        }
+
+        // --- Initial Build of Lookup Table ---
+        buildAbbreviationLookup();
+
+
+        // Current step in the wizard
+        let currentStep = 1;
+        let customDescriptorCount = 0;
+        let overrideActive = false; // State variable for override
+
+
+        // Get DOM elements once
+        const categorySelect = document.getElementById("category");
+        const functionSelect = document.getElementById("function");
+        const step1NextBtn = document.getElementById("step1Next");
+        const step2NextBtn = document.getElementById("step2Next");
+        const generateNameBtn = document.getElementById("generateNameBtn");
+        const overrideCheckBtn = document.getElementById("overrideCheckBtn"); // Get override button
+        const overrideNoteDiv = document.getElementById("overrideNote"); // Get override note
+        const predefinedDescriptorsContainer = document.getElementById("predefinedDescriptors");
+        const customDescriptorsContainer = document.getElementById("customDescriptors");
+        const customDescriptorGuidanceDiv = document.getElementById("customDescriptorGuidance"); // Get guidance element
+        const generatedNameDiv = document.getElementById("generatedName");
+        const similarExamplesDiv = document.getElementById("similarExamples");
+        const toast = document.getElementById("toast");
+        const steps = document.querySelectorAll(".step");
+
+        // Decoding elements
+        const nameToDecodeInput = document.getElementById("nameToDecode");
+        const decodeNameBtn = document.getElementById("decodeNameBtn");
+        const decodeOutputDiv = document.getElementById("decodeOutput");
+
+
+        // Add event listeners early
+        categorySelect.addEventListener('change', updateSecondStep);
+        functionSelect.addEventListener('change', updateThirdStep);
+        overrideCheckBtn.addEventListener('click', overrideRequiredCheck);
+        decodeNameBtn.addEventListener('click', decodeName); // Add listener for decode button
+
+
+        // Initialize accordion functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordions = document.getElementsByClassName("accordion");
+            for (let i = 0; i < accordions.length; i++) {
+                accordions[i].addEventListener("click", function() {
+                    const panel = this.nextElementSibling;
+                    this.classList.toggle("active");
+
+                    if (this.classList.contains("active")) {
+                         // Open the panel
+                         panel.style.maxHeight = panel.scrollHeight + "px";
+                         panel.classList.add('active');
+                         // Recalculate height after a brief moment to catch any rendering delay
+                         setTimeout(() => {
+                             if (panel.classList.contains('active')) {
+                                 panel.style.maxHeight = panel.scrollHeight + "px";
+                             }
+                         }, 50);
+
+                    } else {
+                        // Close the panel
+                        panel.style.maxHeight = null;
+                         panel.classList.remove('active');
+                    }
+                });
+            }
+             // Initial build of the abbreviation lookup table
+             buildAbbreviationLookup();
+             // Initialize first step visibility and button states
+             showStep(currentStep);
+             updateSecondStep(); // Check initial category state
+        });
+
+        // Function to show a specific step and hide others
+        function showStep(stepNumber) {
+             steps.forEach(step => step.classList.remove('active'));
+             const stepElement = document.getElementById(`step${stepNumber}`);
+             if (stepElement) {
+                 stepElement.classList.add('active');
+                 currentStep = stepNumber;
+                  // Scroll to top of the container when changing steps
+                 document.querySelector('.wizard-container').scrollTop = 0;
+             } else {
+                 console.error("Step element not found:", `step${stepNumber}`);
+             }
+        }
+
+
+        // Function to update UI based on category selection (Step 1 -> Step 2)
+        function updateSecondStep() {
+            const category = categorySelect.value;
+
+            // Reset function select and disable next button
+            functionSelect.innerHTML = '<option value="">-- Select Type/Function --</option>';
+            step1NextBtn.disabled = !category; // Enable next only if category is selected
+            step2NextBtn.disabled = true; // Always disable step 2 next until function is selected
+
+            if (category && typeFunctions[category]) { // Use typeFunctions here
+                typeFunctions[category].forEach(func => {
+                    const option = document.createElement("option");
+                    option.value = func.value;
+                    // Show user-friendly label (Abbreviation)
+                    option.textContent = `${func.label} (${func.value})`;
+                    functionSelect.appendChild(option);
+                });
+            }
+             // Clear step 3 & 4 content when going back
+             predefinedDescriptorsContainer.innerHTML = '';
+             customDescriptorsContainer.innerHTML = '';
+             customDescriptorGuidanceDiv.innerHTML = ''; // Clear guidance
+             generatedNameDiv.textContent = '';
+             similarExamplesDiv.innerHTML = '';
+             customDescriptorCount = 0; // Reset custom descriptor counter
+             overrideActive = false; // Reset override state
+             overrideNoteDiv.style.display = 'none'; // Hide override note
+             generateNameBtn.disabled = true; // Ensure generate button is disabled
+             overrideCheckBtn.disabled = false; // Ensure override button is enabled
+        }
+
+        // Function to update UI based on function selection (Step 2 -> Step 3 setup)
+        function updateThirdStep() {
+            const category = categorySelect.value;
+            const func = functionSelect.value;
+
+            step2NextBtn.disabled = !func; // Enable next only if function is selected
+            generateNameBtn.disabled = true; // Always disable generate button initially
+            overrideActive = false; // Reset override state when entering step 3
+            overrideNoteDiv.style.display = 'none'; // Hide override note
+            overrideCheckBtn.disabled = false; // Ensure override button is enabled
+
+
+            // Clear previous predefined and custom descriptors
+            predefinedDescriptorsContainer.innerHTML = '';
+            customDescriptorsContainer.innerHTML = '';
+            customDescriptorCount = 0; // Reset custom descriptor counter
+            customDescriptorGuidanceDiv.innerHTML = ''; // Clear guidance
+
+
+            if (category && func) {
+                const descriptorKey = `${category}-${func}`;
+                const descriptorsConfig = predefinedDescriptors[descriptorKey] || predefinedDescriptors["_GENERIC_"]; // Use generic if specific not found
+
+                 // --- Populate Predefined Descriptors ---
+                if (descriptorsConfig && descriptorsConfig.length > 0) {
+                    descriptorsConfig.forEach(descriptor => {
+                        const formGroup = document.createElement("div");
+                        formGroup.className = "form-group";
+
+                        const label = document.createElement("label");
+                        label.setAttribute("for", descriptor.id);
+                        label.textContent = descriptor.label;
+                        if (descriptor.required) {
+                            const requiredSpan = document.createElement("span");
+                            requiredSpan.className = "required-indicator";
+                            requiredSpan.textContent = "*";
+                            label.appendChild(requiredSpan);
+                        }
+
+                        let inputElement;
+                        if (descriptor.type === 'select') {
+                             inputElement = document.createElement("select");
+                             inputElement.id = descriptor.id;
+                             inputElement.setAttribute("data-required", descriptor.required);
+                             inputElement.setAttribute("data-descriptor-type", "predefined");
+
+                            // Add blank option
+                            const blankOption = document.createElement("option");
+                            blankOption.value = "";
+                            blankOption.textContent = `-- Select ${descriptor.label.replace(' *', '').replace(' (Optional)', '')} --`; // Clean label for placeholder
+                            inputElement.appendChild(blankOption);
+
+                            // Add descriptor options
+                            if(descriptor.options) {
+                                Object.keys(descriptor.options).forEach(key => {
+                                    const option = document.createElement("option");
+                                    option.value = descriptor.options[key]; // Abbreviation as value
+                                    // Show user-friendly text (Abbreviation)
+                                    option.textContent = `${key} (${descriptor.options[key]})`;
+                                    inputElement.appendChild(option);
+                                });
+                            }
+
+                        } else if (descriptor.type === 'text') {
+                            inputElement = document.createElement("input");
+                            input.type = "text";
+                            inputElement.id = descriptor.id;
+                            inputElement.setAttribute("data-required", descriptor.required);
+                            inputElement.setAttribute("data-descriptor-type", "predefined");
+                            if (descriptor.placeholder) {
+                                inputElement.placeholder = descriptor.placeholder;
+                            }
+                        }
+
+                        if (inputElement) {
+                             // Add event listener to check required fields whenever input changes
+                             inputElement.addEventListener('input', checkRequiredFields); // For text inputs
+                             inputElement.addEventListener('change', checkRequiredFields); // For select inputs
+
+                             formGroup.appendChild(label);
+                             formGroup.appendChild(inputElement);
+
+                             if (descriptor.placeholder && descriptor.type === 'text') { // Add placeholder as help text *only* for text inputs for clarity
+                                  const helpText = document.createElement("div");
+                                  helpText.className = "help-text";
+                                  helpText.textContent = descriptor.placeholder;
+                                  formGroup.appendChild(helpText);
+                             } else if (!descriptor.required) {
+                                 const helpText = document.createElement("div");
+                                 helpText.className = "help-text";
+                                 helpText.textContent = "Optional";
+                                 formGroup.appendChild(helpText);
+                             }
+
+                             predefinedDescriptorsContainer.appendChild(formGroup);
+                        }
+                    });
+                } else {
+                    // If no predefined descriptors, show a message
+                    predefinedDescriptorsContainer.innerHTML = `
+                        <div class="info-box">
+                            <p>No specific predefined descriptors for this combination.</p>
+                        </div>
+                    `;
+                }
+
+                 // --- Populate Custom Descriptor Guidance ---
+                 const guidanceKey = `${category}-${func}`;
+                 const guidanceText = customGuidanceMapping[guidanceKey] || customGuidanceMapping["_GENERIC_"];
+                 if (guidanceText) {
+                     const guidanceParagraph = document.createElement('p');
+                     guidanceParagraph.textContent = `Consider adding custom descriptors for details like: ${guidanceText}`;
+                     customDescriptorGuidanceDiv.appendChild(guidanceParagraph);
+                 }
+
+
+                 // --- Initialize Custom Descriptors ---
+                 // Always add one empty custom descriptor field by default
+                 addDescriptorField();
+                 checkRequiredFields(); // Check required fields after populating
+            } else {
+                 // If category or function is cleared, clear descriptors
+                 predefinedDescriptorsContainer.innerHTML = '';
+                 customDescriptorsContainer.innerHTML = '';
+                 customDescriptorGuidanceDiv.innerHTML = '';
+                 customDescriptorCount = 0;
+            }
+             // Reset accordion panel state
+             const accordionButton = document.querySelector(".accordion");
+             const panel = document.querySelector(".panel");
+             if (accordionButton && panel) { // Check if elements exist
+                accordionButton.classList.remove('active');
+                panel.classList.remove('active');
+                panel.style.maxHeight = null;
+             }
+
+        }
+
+        // Check if all required fields have values
+        function checkRequiredFields() {
+            // If override is active, validation is bypassed
+            if (overrideActive) {
+                generateNameBtn.disabled = false;
+                return;
+            }
+
+            const requiredInputs = predefinedDescriptorsContainer.querySelectorAll('[data-required="true"]');
+            let allRequiredFilled = true;
+
+            requiredInputs.forEach(input => {
+                // Check for both empty string and the default blank option value
+                if (input.tagName === 'SELECT' && input.value === "") {
+                     allRequiredFilled = false;
+                } else if (input.tagName === 'INPUT' && !input.value.trim()) {
+                    allRequiredFilled = false;
+                }
+            });
+
+            // Enable generate button only if all required fields are filled AND override is not active
+            generateNameBtn.disabled = !allRequiredFilled;
+        }
+
+         // Function to override the required fields check
+         function overrideRequiredCheck() {
+             overrideActive = true; // Set override state
+             generateNameBtn.disabled = false; // Explicitly enable the generate button
+             overrideCheckBtn.disabled = true; // Disable the override button after clicking
+             overrideNoteDiv.style.display = 'block'; // Show the override message
+         }
+
+
+        // Function to add a custom descriptor field
+        function addDescriptorField() {
+            const container = customDescriptorsContainer;
+            const descriptorId = `customDescriptor${customDescriptorCount++}`;
+
+            const descriptorItem = document.createElement("div");
+            descriptorItem.className = "descriptor-item";
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.id = descriptorId;
+            input.className = "custom-descriptor"; // Add class for easy selection
+            input.setAttribute("data-descriptor-type", "custom"); // Mark as custom
+            input.placeholder = "Enter custom abbreviation (e.g., ACST, 24x48, FR60M)"; // Updated placeholder
+            // Add listener to custom fields too (optional - they are not required for generate button)
+            // input.addEventListener('input', checkRequiredFields);
+
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "remove-descriptor";
+            removeBtn.type = "button"; // Prevent form submission
+            removeBtn.textContent = "✕";
+            removeBtn.onclick = function() {
+                container.removeChild(descriptorItem);
+                 updatePanelHeight(container.closest('.panel')); // Update height after removing
+            };
+
+            descriptorItem.appendChild(input);
+            descriptorItem.appendChild(removeBtn);
+            container.appendChild(descriptorItem);
+
+            // Update panel height for accordion *after* adding the element
+            updatePanelHeight(container.closest('.panel'));
+
+            // Focus the newly added input
+            input.focus();
+        }
+
+         // Helper to update accordion panel height
+         function updatePanelHeight(panel) {
+              // Check if panel exists and is currently open
+              const accordionButton = panel ? panel.previousElementSibling : null;
+
+              if (panel && accordionButton && accordionButton.classList.contains('active')) {
+                   // Temporarily remove transition to jump to full height instantly for calculation
+                   panel.style.transition = 'none';
+                   // Use a value larger than expected content, but clamp it to a reasonable max if needed
+                   panel.style.maxHeight = '1000px';
+                   const scrollHeight = panel.scrollHeight;
+
+                   // Set the actual max height and restore transition after a slight delay
+                   requestAnimationFrame(() => {
+                        panel.style.maxHeight = scrollHeight + "px";
+                        panel.style.transition = 'max-height 0.2s ease-out'; // Restore transition
+                   });
+              }
+         }
+
+
+        // Navigation functions
+        function nextStep() {
+            document.getElementById(`step${currentStep}`).classList.remove("active");
+            currentStep++;
+            showStep(currentStep);
+        }
+
+        function prevStep() {
+            document.getElementById(`step${currentStep}`).classList.remove("active");
+            currentStep--;
+            showStep(currentStep);
+            // Ensure buttons are in correct state when going back
+            if (currentStep === 1) updateSecondStep(); // Resets step 2 and onwards
+            if (currentStep === 2) updateThirdStep(); // Re-evaluate step 3 based on selections
+        }
+
+        function startOver() {
+            showStep(1);
+
+            // Reset form fields
+            categorySelect.value = "";
+            updateSecondStep(); // This also resets functionSelect and step2/3 content
+            generatedNameDiv.textContent = "";
+            similarExamplesDiv.innerHTML = "";
+            nameToDecodeInput.value = ""; // Reset decode input
+            decodeOutputDiv.innerHTML = ""; // Clear decode output
+
+            // Ensure button states are reset
+            step1NextBtn.disabled = true;
+            step2NextBtn.disabled = true;
+            generateNameBtn.disabled = true;
+            overrideActive = false; // Reset override state
+            overrideCheckBtn.disabled = false; // Re-enable override button
+            overrideNoteDiv.style.display = 'none'; // Hide override note
+
+
+            // Reset accordion state
+            const accordionButton = document.querySelector(".accordion");
+            const panel = document.querySelector(".panel");
+            if (accordionButton && panel) { // Check if elements exist before resetting
+              accordionButton.classList.remove('active');
+              panel.classList.remove('active');
+              panel.style.maxHeight = null;
+            }
+
+        }
+
+        // Generate the name based on selections
+        function generateName() {
+            const category = categorySelect.value;
+            const func = functionSelect.value;
+
+            // This check should ideally be redundant due to button disabling, but is a safeguard
+            if (!category || !func) {
+                 generatedNameDiv.textContent = "Error: Category and Function must be selected to generate a name.";
+                return;
+            }
+
+            let components = [category, func]; // Start with Category and Function
+
+            // Collect predefined descriptor values
+            const predefinedInputs = predefinedDescriptorsContainer.querySelectorAll('[data-descriptor-type="predefined"]');
+            predefinedInputs.forEach(input => {
+                const value = input.value.trim();
+                if (value) {
+                    components.push(value);
+                }
+            });
+
+            // Collect custom descriptor values
+            const customInputs = customDescriptorsContainer.querySelectorAll('[data-descriptor-type="custom"]');
+            customInputs.forEach(input => {
+                const value = input.value.trim();
+                if (value) {
+                    components.push(value);
+                }
+            });
+
+            // Join the components with UNDERSCORES, filtering out any empty strings
+            // Note: The first part 'o' is joined with the category using an underscore
+            const finalName = 'o_' + components.filter(part => part !== '').join('_'); // Changed '-' to '_'
+
+            generatedNameDiv.textContent = finalName;
+
+            // Populate examples for step 4
+            populateExamples(category);
+
+            // Move to step 4
+            nextStep();
+        }
+
+         // Populate similar examples in step 4
+         function populateExamples(category) {
+             similarExamplesDiv.innerHTML = ''; // Clear previous examples
+
+             const categoryExamples = examples[category];
+             if (categoryExamples && categoryExamples.length > 0) {
+                 const exampleTitle = document.createElement('h4'); // Use h4 for subheading
+                 // Get category name from the select element options for user-friendliness
+                 const selectedCategoryText = categorySelect.options[categorySelect.selectedIndex].text;
+                 exampleTitle.textContent = `Examples for ${selectedCategoryText}:`; // Use the full category name
+
+                 similarExamplesDiv.appendChild(exampleTitle); // Add the title
+
+                  categoryExamples.forEach(exampleText => {
+                       const exampleElement = document.createElement('div');
+                       exampleElement.className = 'example';
+                       exampleElement.textContent = exampleText;
+                       similarExamplesDiv.appendChild(exampleElement);
+                  });
+             } else {
+                  similarExamplesDiv.innerHTML = '<p>No specific examples available for this category.</p>';
+             }
+         }
+
+
+        // Copy generated name to clipboard
+        function copyToClipboard() {
+            const nameToCopy = generatedNameDiv.textContent;
+            if (nameToCopy) {
+                navigator.clipboard.writeText(nameToCopy).then(() => {
+                    showToast("Copied to clipboard!");
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    // Fallback for older browsers or failed modern copy
+                     try {
+                        const textArea = document.createElement("textarea");
+                        textArea.value = nameToCopy;
+                        textArea.style.position = "fixed"; // Avoid scrolling
+                        textArea.style.left = "-9999px"; // Hide off-screen
+                        textArea.style.top = "0";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        showToast("Copied to clipboard (fallback).");
+                    } catch (fallbackErr) {
+                        console.error('Fallback copy failed:', fallbackErr);
+                        showToast("Failed to copy name."); // Final failure message
+                    }
+                });
+            }
+        }
+
+        // Show a transient message (toast notification)
+        let toastTimeout;
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            // Clear any existing timeout
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+
+            // Hide the toast after 3 seconds
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Decode Name Functionality ---
+        function decodeName() {
+            const name = nameToDecodeInput.value.trim().toUpperCase(); // Get input and uppercase for case-insensitive
+            const outputDiv = decodeOutputDiv;
+            outputDiv.innerHTML = ''; // Clear previous output
+
+            if (!name) {
+                outputDiv.innerHTML = '<p>Please enter a name to decode.</p>';
+                return;
+            }
+
+            // Split the name by underscore
+            const parts = name.split('_');
+
+            if (parts.length === 0) {
+                 outputDiv.innerHTML = '<p>Invalid name format. Could not split by underscore.</p>';
+                 return;
+            }
+
+            // Process the prefix
+            let startIndex = 0;
+            if (parts[0] === "O") {
+                const line = document.createElement('div');
+                line.innerHTML = `<strong>[${parts[0]}]</strong>: ${abbrToDescription["O"] || "Unknown Prefix"}`;
+                outputDiv.appendChild(line);
+                startIndex = 1; // Start processing remaining parts from index 1
+            } else {
+                 // If no 'O' prefix, note it
+                 const line = document.createElement('div');
+                 line.innerHTML = `<strong>[${parts[0]}]</strong>: Missing or Unknown Prefix (Expected 'O')`;
+                 outputDiv.appendChild(line);
+                 // Decide if we should continue decoding without the 'O'. Let's continue.
+                 // startIndex = 0; // Keep startIndex at 0 if you want to decode the first part anyway
+                  startIndex = 1; // Assume the first part *should* have been O and skip it for structured decoding
+            }
+
+            // Process the remaining parts
+            for (let i = startIndex; i < parts.length; i++) {
+                const part = parts[i];
+                const description = abbrToDescription[part] || "Unknown or Custom Descriptor";
+
+                const line = document.createElement('div');
+                line.innerHTML = `<strong>[${part}]</strong>: ${description}`;
+                outputDiv.appendChild(line);
+            }
+
+             // Add a final note if any part was unknown
+             const unknownParts = parts.slice(startIndex).filter(part => !abbrToDescription[part]);
+             if(startIndex === 0 && !abbrToDescription[parts[0]]) {
+                 // If the first part was also unknown (and not 'O')
+                 // The loop above handles it, but we might want a summary note
+             }
+             if(unknownParts.length > 0 && startIndex === 1 && parts[0] !== "O") {
+                  // If prefix was wrong AND there are unknown parts, maybe refine note
+             }
+             // Simple approach: add a note if the final output contains "Unknown"
+             if (outputDiv.innerHTML.includes("Unknown")) {
+                 const note = document.createElement('p');
+                 note.className = 'help-text';
+                 note.style.fontStyle = 'normal';
+                 note.style.marginTop = '10px';
+                 note.textContent = "Note: 'Unknown or Custom Descriptor' indicates the abbreviation was not found in the tool's built-in list.";
+                 outputDiv.appendChild(note);
+             }
+
+        }
+
+
+    </script>
+</body>
+</html>
